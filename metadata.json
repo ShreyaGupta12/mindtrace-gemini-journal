@@ -1,0 +1,6 @@
+{
+  "name": "Personal Gemini Journal",
+  "description": "MindTrace: A calm, sophisticated dark editorial journal with multi-turn Gemini conversations, automatic summaries, and AI reflection insights.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
