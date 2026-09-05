@@ -1,6 +1,6 @@
 {
   "name": "Personal Gemini Journal",
   "description": "A warm, whimsical English journal for mental wellbeing, gentle Gemini conversations, and compassionate self-reflection.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": ["microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

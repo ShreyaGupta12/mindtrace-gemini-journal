@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import Markdown from 'react-markdown';
 import {
   Send,
   Loader2,
@@ -11,6 +12,9 @@ import {
   Sun,
   Smile,
   Trash2,
+  Mic,
+  MicOff,
+  AlertCircle,
 } from 'lucide-react';
 import type { JournalEntry } from '../types';
 import { ReflectionCard } from './ReflectionCard';
@@ -50,6 +54,13 @@ export const JournalEditor: React.FC<JournalEditorProps> = ({
   const [inputPrompt, setInputPrompt] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('all');
   const [reflectionError, setReflectionError] = useState<string | null>(null);
+  
+  // Voice Speech-to-Text state
+  const [isListening, setIsListening] = useState(false);
+  const [speechError, setSpeechError] = useState<string | null>(null);
+  const recognitionRef = useRef<any>(null);
+  const baseTextRef = useRef<string>('');
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -62,9 +73,134 @@ export const JournalEditor: React.FC<JournalEditorProps> = ({
     }
   }, [entry.messages, isSending, viewMode]);
 
+  // Clean up speech recognition on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort();
+        } catch {
+          // ignore cleanup abort
+        }
+      }
+    };
+  }, []);
+
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {
+        // ignore
+      }
+    }
+    setIsListening(false);
+  };
+
+  const toggleListening = () => {
+    setSpeechError(null);
+
+    if (isListening) {
+      stopListening();
+      return;
+    }
+
+    const SpeechRecognition =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      setSpeechError(
+        'Speech recognition is not supported in this browser. Please try Chrome, Edge, or Safari.'
+      );
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      baseTextRef.current = inputPrompt.trim();
+
+      recognition.onstart = () => {
+        setIsListening(true);
+        setSpeechError(null);
+      };
+
+      recognition.onresult = (event: any) => {
+        let finalSegment = '';
+        let interimSegment = '';
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          const transcript = event.results[i][0]?.transcript || '';
+          if (event.results[i].isFinal) {
+            finalSegment += transcript;
+          } else {
+            interimSegment += transcript;
+          }
+        }
+
+        const currentSpoken = (finalSegment + ' ' + interimSegment).trim();
+
+        // Check for voice command: "send message", "send note", or "send reflection"
+        const lower = currentSpoken.toLowerCase();
+        if (
+          lower.includes('send message') ||
+          lower.includes('send reflection') ||
+          lower.includes('send note')
+        ) {
+          const cleanedText = currentSpoken
+            .replace(/send\s+(message|reflection|note)/gi, '')
+            .trim();
+          
+          const fullMessage = (baseTextRef.current ? baseTextRef.current + ' ' : '') + cleanedText;
+          if (fullMessage.trim()) {
+            stopListening();
+            setInputPrompt('');
+            onSendMessage(fullMessage.trim());
+            return;
+          }
+        }
+
+        // Otherwise update prompt
+        const combined = (baseTextRef.current ? baseTextRef.current + ' ' : '') + currentSpoken;
+        setInputPrompt(combined);
+      };
+
+      recognition.onerror = (event: any) => {
+        console.warn('Speech recognition event error:', event.error);
+        if (event.error === 'not-allowed' || event.error === 'permission-denied') {
+          setSpeechError(
+            'Microphone access was denied. Please allow microphone permissions in your browser address bar.'
+          );
+          setIsListening(false);
+        } else if (event.error !== 'no-speech') {
+          setSpeechError(`Voice input paused (${event.error}). Tap the mic to try again.`);
+          setIsListening(false);
+        }
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (err: any) {
+      console.error('Failed to start speech recognition:', err);
+      setSpeechError(err.message || 'Could not access speech recognition.');
+      setIsListening(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputPrompt.trim() || isSending) return;
+    if (isListening) {
+      stopListening();
+    }
     const promptToSend = inputPrompt.trim();
     setInputPrompt('');
     await onSendMessage(promptToSend);
@@ -203,7 +339,7 @@ export const JournalEditor: React.FC<JournalEditorProps> = ({
                     A Quiet Cup of Tea for Your Thoughts
                   </p>
                   <p className="text-xs text-[#9aaba1] font-lora italic text-sm max-w-md mx-auto leading-relaxed">
-                    Take your time. Write about something that made you smile, unpack a lingering worry, or simply describe how your day felt.
+                    Take your time. Write about something that made you smile, unpack a lingering worry, or simply speak into the microphone.
                   </p>
                 </div>
 
@@ -244,11 +380,17 @@ export const JournalEditor: React.FC<JournalEditorProps> = ({
                     <div
                       className={`max-w-xl rounded-2xl px-4.5 py-3 text-xs sm:text-sm leading-relaxed ${
                         isUser
-                          ? 'bg-gradient-to-br from-[#1a2729] to-[#152123] text-[#fbf9f4] border border-emerald-400/20 rounded-tr-xs shadow-sm'
-                          : 'bg-[#12191b] text-[#dce4dc] border border-emerald-500/15 rounded-tl-xs shadow-xs whitespace-pre-wrap font-lora text-sm sm:text-base'
+                          ? 'bg-gradient-to-br from-[#1a2729] to-[#152123] text-[#fbf9f4] border border-emerald-400/20 rounded-tr-xs shadow-sm whitespace-pre-wrap'
+                          : 'bg-[#12191b] text-[#dce4dc] border border-emerald-500/15 rounded-tl-xs shadow-xs font-lora text-sm sm:text-base'
                       }`}
                     >
-                      {msg.content}
+                      {isUser ? (
+                        <div className="whitespace-pre-wrap">{msg.content}</div>
+                      ) : (
+                        <div className="markdown-body">
+                          <Markdown>{msg.content}</Markdown>
+                        </div>
+                      )}
                     </div>
 
                     {isUser && (
@@ -279,6 +421,45 @@ export const JournalEditor: React.FC<JournalEditorProps> = ({
 
       {/* Input Writing Bar */}
       <footer className="p-4 sm:p-5 border-t border-emerald-500/15 bg-[#0f1517]/90 backdrop-blur-md relative z-10 space-y-3">
+        {/* Voice listening active indicator banner */}
+        {isListening && (
+          <div className="max-w-3xl mx-auto flex items-center justify-between text-xs bg-rose-950/40 border border-rose-500/40 text-rose-200 px-3.5 py-2 rounded-xl shadow-md">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping shrink-0" />
+              <span className="font-newsreader font-semibold tracking-wide text-rose-100">
+                Listening to your voice...
+              </span>
+              <span className="text-[#a5b5a8] hidden sm:inline font-lora italic text-[11px]">
+                (Speak freely, or say "send message" to submit)
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={stopListening}
+              className="text-xs font-semibold text-rose-300 hover:text-white px-2 py-0.5 rounded-lg bg-rose-900/40 hover:bg-rose-900/70 transition-all cursor-pointer"
+            >
+              Stop
+            </button>
+          </div>
+        )}
+
+        {/* Speech recognition error banner */}
+        {speechError && (
+          <div className="max-w-3xl mx-auto p-2.5 text-xs text-amber-200 bg-amber-950/40 border border-amber-500/30 rounded-xl flex items-center justify-between gap-2 shadow-sm font-lora">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>{speechError}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSpeechError(null)}
+              className="text-[10px] text-amber-300 hover:text-white underline cursor-pointer shrink-0"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
         {error && (
           <div
             id="editor-error-banner"
@@ -301,6 +482,27 @@ export const JournalEditor: React.FC<JournalEditorProps> = ({
           onSubmit={handleSubmit}
           className="max-w-3xl mx-auto flex items-end gap-2.5"
         >
+          {/* Microphone Voice Dictation & Command Button */}
+          <button
+            id="btn-voice-input"
+            type="button"
+            onClick={toggleListening}
+            disabled={isSending}
+            className={`h-12 w-12 rounded-2xl flex items-center justify-center transition-all shadow-sm shrink-0 cursor-pointer border ${
+              isListening
+                ? 'bg-rose-600/30 text-rose-300 border-rose-500/50 animate-recording ring-2 ring-rose-500/40'
+                : 'bg-[#141d1f] hover:bg-[#1a2629] text-[#9aaba1] hover:text-emerald-300 border-emerald-500/20'
+            }`}
+            title={isListening ? 'Stop listening' : 'Speak with voice command'}
+            aria-label={isListening ? 'Stop voice listening' : 'Start voice listening'}
+          >
+            {isListening ? (
+              <MicOff className="w-5 h-5 text-rose-300" />
+            ) : (
+              <Mic className="w-5 h-5 text-emerald-300" />
+            )}
+          </button>
+
           <div className="flex-1 relative">
             <textarea
               id="chat-input-textarea"
@@ -308,7 +510,11 @@ export const JournalEditor: React.FC<JournalEditorProps> = ({
               value={inputPrompt}
               onChange={(e) => setInputPrompt(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Write whatever is on your mind... (Enter to send, Shift+Enter for newline)"
+              placeholder={
+                isListening
+                  ? 'Listening to your voice... (say "send message" to submit)'
+                  : 'Write or speak whatever is on your mind... (Enter to send, Shift+Enter for newline)'
+              }
               className="w-full text-xs sm:text-sm p-3.5 pr-10 border border-emerald-500/20 rounded-2xl focus:border-emerald-400/60 focus:ring-1 focus:ring-emerald-400/30 focus:outline-hidden resize-none bg-[#141d1f] text-[#f8f6f0] placeholder-[#798a7d] transition-all shadow-inner font-lora text-base"
             />
           </div>

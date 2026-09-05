@@ -180,3 +180,23 @@ Every core flow has corresponding test paths:
    - Click "Extract Insight"; verify main theme, emotional tone, key observation, and daily takeaway are extracted and saved.
 6. **Error & Resilience Handling**:
    - Verify graceful feedback when network is interrupted or rate limits occur (429 handling).
+
+---
+
+## 8. GitHub Secret Scanning & Key Security Guide
+
+### Understanding GitHub Secret Scanning Alerts (`AIzaSy...`)
+If GitHub Secret Scanning alerts on `AIzaSy...` in your repository (`ShreyaGupta12/mindtrace-gemini-journal`):
+1. **Gemini API Key vs. Firebase Web Config**:
+   - Your private **`GEMINI_API_KEY` was NEVER exposed or committed**. It is securely stored on the server-side backend via Secret Manager or environment variables.
+   - The detected token (`AIzaSy...`) in `firebase-applet-config.json` is the **Firebase Web Client Identifier**. Firebase web apps use this configuration to allow the frontend to connect to Firebase Authentication and Cloud Firestore.
+2. **Remediation & Key Hardening Steps**:
+   - Open Google Cloud Console -> **APIs & Services** -> **Credentials**.
+   - Select your Firebase web API key (`AIzaSyCHkW7nzn45dKs_vh-s6wfQvBpNF0d3EC8`).
+   - Under **API restrictions**, choose **"Restrict key"** and select only:
+     - `Firebase Authentication API` / `Identity Toolkit API`
+     - `Cloud Firestore API`
+     *(Ensure Generative Language API is NOT allowed on this key).*
+   - Under **Application restrictions**, set "Websites" (HTTP referrers) to your app domain and `localhost`.
+   - In GitHub Secret Scanning, you can now safely mark the alert as "False positive / Public Firebase web identifier (restricted)".
+   - Alternatively, supply `VITE_FIREBASE_API_KEY` in environment variables and add `firebase-applet-config.json` to `.gitignore`.

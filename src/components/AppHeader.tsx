@@ -9,11 +9,36 @@ interface AppHeaderProps {
   isSidebarOpen?: boolean;
 }
 
+/**
+ * Safely masks an email address to protect user privacy.
+ * E.g., 'shreyaguptacsbs@gmail.com' -> 'sh••••••s@gmail.com'
+ */
+export function maskEmail(email: string | null | undefined): string {
+  if (!email) return 'Anonymous';
+  const atIndex = email.indexOf('@');
+  if (atIndex <= 0) return '••••••';
+  
+  const localPart = email.slice(0, atIndex);
+  const domain = email.slice(atIndex); // e.g. '@gmail.com'
+  
+  if (localPart.length <= 2) {
+    return `${localPart[0]}*${domain}`;
+  }
+  
+  const start = localPart.slice(0, 2);
+  const end = localPart.length > 4 ? localPart.slice(-1) : '';
+  const maskedLength = Math.max(3, Math.min(localPart.length - 2 - end.length, 6));
+  const mask = '•'.repeat(maskedLength);
+  
+  return `${start}${mask}${end}${domain}`;
+}
+
 export const AppHeader: React.FC<AppHeaderProps> = ({
   user,
   onSignOut,
   onToggleSidebar,
 }) => {
+  const maskedEmail = maskEmail(user.email);
   return (
     <header
       id="app-top-header"
@@ -62,11 +87,14 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
       <div className="flex items-center gap-3">
         {/* Privacy & Safe Sanctuary badge */}
-        <div className="hidden lg:flex items-center gap-1.5 text-[11px] text-[#abb9af] bg-[#141d1e]/80 border border-emerald-500/20 px-3 py-1 rounded-full shadow-xs">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+        <div
+          className="hidden lg:flex items-center gap-1.5 text-[11px] text-[#abb9af] bg-[#141d1e]/80 border border-emerald-500/20 px-3 py-1 rounded-full shadow-xs select-none"
+          title="Your identity and personal journal entries are end-to-end isolated and private"
+        >
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
           <span className="font-lora text-xs italic text-amber-200/90 font-medium">Safe &amp; Private:</span>
-          <span className="truncate max-w-[170px] text-[11px] text-[#d6ded8]">
-            {user.email}
+          <span className="truncate max-w-[170px] text-[11px] text-[#d6ded8] tracking-wider font-mono">
+            {maskedEmail}
           </span>
         </div>
 
@@ -88,7 +116,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             </div>
           )}
           <span className="hidden sm:inline text-xs font-medium text-[#e3e8e1] max-w-[130px] truncate font-newsreader">
-            {user.displayName || user.email?.split('@')[0]}
+            {user.displayName || maskedEmail}
           </span>
         </div>
 
