@@ -83,12 +83,20 @@ app.post('/api/chat', requireAuth, async (req: AuthenticatedRequest, res) => {
 
     if (
       errorMessage.includes('429') ||
-      errorMessage.includes('RESOURCE_EXHAUSTED') ||
+      errorMessage.includes('RESOURCE_EXHAUSTED')
+    ) {
+      res.status(429).json({
+        error: 'The Gemini API rate limit or quota has been exceeded. Please check your AI Studio plan or try again later.',
+      });
+      return;
+    }
+
+    if (
       errorMessage.includes('503') ||
       errorMessage.includes('UNAVAILABLE') ||
       errorMessage.includes('high demand')
     ) {
-      res.status(429).json({
+      res.status(503).json({
         error: 'The journal assistant is experiencing high volume. Please wait a moment and try again.',
       });
       return;
@@ -154,12 +162,20 @@ app.post('/api/reflection', requireAuth, async (req: AuthenticatedRequest, res) 
 
     if (
       errorMessage.includes('429') ||
-      errorMessage.includes('RESOURCE_EXHAUSTED') ||
+      errorMessage.includes('RESOURCE_EXHAUSTED')
+    ) {
+      res.status(429).json({
+        error: 'The Gemini API rate limit or quota has been exceeded. Please check your AI Studio plan or try again later.',
+      });
+      return;
+    }
+
+    if (
       errorMessage.includes('503') ||
       errorMessage.includes('UNAVAILABLE') ||
       errorMessage.includes('high demand')
     ) {
-      res.status(429).json({
+      res.status(503).json({
         error: 'AI Reflection Insight is busy with high demand. Please try again in a few seconds.',
       });
       return;
