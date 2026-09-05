@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Sparkles, Lock, ArrowRight, Loader2, Feather, Compass } from 'lucide-react';
+import { Shield, Heart, Lock, ArrowRight, Loader2, Coffee, Sprout, Sun } from 'lucide-react';
 
 interface AuthScreenProps {
   onSignIn: () => void;
@@ -15,72 +15,83 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
   return (
     <div
       id="auth-screen-container"
-      className="min-h-screen bg-[#0c0e14] text-[#f3f2ee] flex items-center justify-center p-4 sm:p-6"
+      className="min-h-screen bg-[#0d1214] text-[#f7f5ed] flex items-center justify-center p-4 sm:p-6 relative overflow-hidden"
     >
-      <div className="max-w-md w-full bg-[#131620] border border-white/[0.08] rounded-2xl shadow-2xl p-8 space-y-7 relative overflow-hidden">
-        {/* Subtle decorative glow accents */}
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#a78bfa]/5 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
+      {/* Whimsical soft ambient chamomile & sage glows */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-600/10 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-[100px] pointer-events-none" />
+
+      <div className="max-w-md w-full bg-gradient-to-b from-[#131b1d] via-[#111719] to-[#0f1416] border border-emerald-500/25 rounded-3xl shadow-xl p-8 sm:p-9 space-y-7 relative z-10">
+        {/* Top soft chamomile accent line */}
+        <div className="absolute top-0 inset-x-10 h-[1px] bg-gradient-to-r from-transparent via-amber-300/40 to-transparent" />
 
         {/* Product Brand Header */}
-        <div className="text-center space-y-2.5 relative">
-          <div className="w-12 h-12 rounded-xl bg-[#1a1e2b] border border-[#a78bfa]/30 text-[#c4b8f3] flex items-center justify-center mx-auto mb-3 shadow-md">
-            <Feather className="w-5 h-5" />
+        <div className="text-center space-y-3 relative">
+          <div className="relative inline-block mx-auto mb-2">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#1c2925] via-[#162120] to-[#11191a] border border-emerald-400/30 text-emerald-300 flex items-center justify-center shadow-md animate-gentle-breathe">
+              <Coffee className="w-6 h-6 text-amber-200" />
+            </div>
+            <Sprout className="w-4 h-4 text-emerald-300 absolute -top-1 -right-1" />
           </div>
-          <div className="inline-block px-2.5 py-0.5 rounded-full bg-[#a78bfa]/10 border border-[#a78bfa]/20 text-[10px] uppercase tracking-widest font-semibold text-[#c4b8f3]">
-            Midnight Paper Edition
+
+          <div>
+            <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-400/25 text-[10px] uppercase tracking-wider font-medium text-emerald-300 shadow-xs mb-2">
+              <Heart className="w-2.5 h-2.5 text-rose-300" />
+              <span>A Gentle Haven for the Mind</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-normal text-transparent bg-clip-text bg-gradient-to-r from-[#fbf9f4] via-[#e5e0d3] to-[#f4deb2] font-newsreader">
+              MindTrace
+            </h1>
+            <p className="text-xs text-amber-200/90 font-lora italic tracking-wide text-base mt-1">
+              "A warm cup of tea for your thoughts &amp; emotional wellbeing"
+            </p>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-[#f3f2ee]">
-            MindTrace
-          </h1>
-          <p className="text-xs text-[#a19e95] tracking-wide italic">
-            "Think it. Explore it. Understand it."
-          </p>
-          <p className="text-xs text-[#8a8880] max-w-xs mx-auto leading-relaxed pt-1">
-            A calm, sophisticated editorial journal for multi-turn brainstorming, contemplative writing, and deep AI reflection insights.
+
+          <p className="text-xs text-[#9aaba1] font-lora max-w-xs mx-auto leading-relaxed pt-1">
+            A comforting, private sanctuary to write freely, unpack difficult emotions, and receive gentle, supportive reflection.
           </p>
         </div>
 
-        {/* Security & Core Architecture Highlights */}
-        <div className="bg-[#181c28] border border-white/[0.06] rounded-xl p-4 space-y-3">
+        {/* Security & Supportive Architecture Highlights */}
+        <div className="bg-[#151f21]/80 border border-emerald-500/20 rounded-2xl p-4 space-y-3 shadow-inner">
           <div className="flex items-start gap-3">
-            <div className="w-6 h-6 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
               <Shield className="w-3.5 h-3.5" />
             </div>
             <div className="text-xs space-y-0.5">
-              <span className="font-medium text-[#f3f2ee] block">
-                Strict Cloud Firestore Isolation
+              <span className="font-semibold text-[#f8f6f0] block font-newsreader text-xs">
+                Private &amp; Locked to You
               </span>
-              <p className="text-[#8a8880] leading-relaxed">
-                Your entries, conversations, and reflections are locked strictly to your authenticated Firebase UID.
+              <p className="text-[#8f9d92] font-lora leading-relaxed">
+                Your entries and reflections are isolated strictly to your authenticated Firebase UID.
               </p>
             </div>
           </div>
 
           <div className="flex items-start gap-3">
-            <div className="w-6 h-6 rounded-md bg-[#a78bfa]/10 border border-[#a78bfa]/20 text-[#c4b8f3] flex items-center justify-center shrink-0 mt-0.5">
+            <div className="w-7 h-7 rounded-lg bg-teal-500/10 border border-teal-500/25 text-teal-300 flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
               <Lock className="w-3.5 h-3.5" />
             </div>
             <div className="text-xs space-y-0.5">
-              <span className="font-medium text-[#f3f2ee] block">
-                Zero Frontend Credentials
+              <span className="font-semibold text-[#f8f6f0] block font-newsreader text-xs">
+                Confidential Backend
               </span>
-              <p className="text-[#8a8880] leading-relaxed">
-                Gemini reasoning runs through a token-verified Cloud Run backend proxy.
+              <p className="text-[#8f9d92] font-lora leading-relaxed">
+                Zero API keys or credentials in the browser; all reflections are securely proxied via Cloud Run.
               </p>
             </div>
           </div>
 
           <div className="flex items-start gap-3">
-            <div className="w-6 h-6 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-300 flex items-center justify-center shrink-0 mt-0.5">
-              <Sparkles className="w-3.5 h-3.5" />
+            <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-400/25 text-amber-300 flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+              <Sun className="w-3.5 h-3.5" />
             </div>
             <div className="text-xs space-y-0.5">
-              <span className="font-medium text-[#f3f2ee] block">
-                AI Reflection Insight
+              <span className="font-semibold text-[#f8f6f0] block font-newsreader text-xs">
+                Gentle Reflection Insights
               </span>
-              <p className="text-[#8a8880] leading-relaxed">
-                Extracts emotional tone, core themes, cognitive patterns, and daily actions from your sessions.
+              <p className="text-[#8f9d92] font-lora leading-relaxed">
+                Unpack your emotional weather, mindful observations, and a gentle grounding step for today.
               </p>
             </div>
           </div>
@@ -89,7 +100,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         {error && (
           <div
             id="auth-error-message"
-            className="p-3 text-xs text-red-300 bg-red-950/40 border border-red-800/60 rounded-lg text-center"
+            className="p-3 text-xs text-red-200 bg-red-950/40 border border-red-500/40 rounded-xl text-center font-lora"
           >
             {error}
           </div>
@@ -100,12 +111,12 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
           id="btn-google-sign-in"
           onClick={onSignIn}
           disabled={isLoading}
-          className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl bg-[#f3f2ee] text-[#0c0e14] font-semibold text-xs sm:text-sm hover:bg-[#dedcd5] disabled:opacity-50 transition-all shadow-lg cursor-pointer"
+          className="w-full flex items-center justify-center gap-3 py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#fbf9f4] via-[#f5f1e8] to-[#ede7dc] text-[#131b1d] font-semibold text-xs sm:text-sm hover:opacity-95 disabled:opacity-50 transition-all shadow-md cursor-pointer active:scale-[0.99] border border-white/40"
         >
           {isLoading ? (
             <>
-              <Loader2 className="w-4 h-4 animate-spin text-[#0c0e14]" />
-              <span>Authenticating with Google...</span>
+              <Loader2 className="w-4 h-4 animate-spin text-[#131b1d]" />
+              <span className="font-newsreader text-xs tracking-wider">Opening Your Journal...</span>
             </>
           ) : (
             <>
@@ -127,13 +138,15 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                 />
               </svg>
-              <span>Sign in with Google</span>
-              <ArrowRight className="w-4 h-4 ml-auto text-[#0c0e14]/70" />
+              <span className="font-newsreader text-sm text-[#131b1d] font-semibold">
+                Enter with Google
+              </span>
+              <ArrowRight className="w-4 h-4 ml-auto text-[#131b1d]/70" />
             </>
           )}
         </button>
 
-        <p className="text-[10px] text-center text-[#6b6962] tracking-wider uppercase">
+        <p className="text-[10px] text-center text-[#718275] tracking-widest uppercase font-mono">
           Cloud Run AI Challenge • dev-tutorial=cloud-run-ai-challenge
         </p>
       </div>

@@ -18,6 +18,7 @@ import { AuthScreen } from './components/AuthScreen';
 import { AppHeader } from './components/AppHeader';
 import { JournalSidebar } from './components/JournalSidebar';
 import { JournalEditor } from './components/JournalEditor';
+import { DeleteConfirmationModal } from './components/DeleteConfirmationModal';
 import { Loader2 } from 'lucide-react';
 
 export default function App() {
@@ -35,6 +36,11 @@ export default function App() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [failedPrompt, setFailedPrompt] = useState<string | null>(null);
+
+  // Delete modal state
+  const [entryPendingDelete, setEntryPendingDelete] = useState<JournalEntry | null>(null);
+  const [isDeletingEntry, setIsDeletingEntry] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Listen for authentication changes
   useEffect(() => {
@@ -120,19 +126,25 @@ export default function App() {
     setEditorError(null);
   };
 
-  const handleDeleteEntry = async (entryId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!currentUser) return;
+  const handleRequestDeleteEntry = (entry: JournalEntry, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setEntryPendingDelete(entry);
+    setDeleteError(null);
+  };
 
-    const confirmDelete = window.confirm(
-      'Are you sure you want to delete this private journal entry?'
-    );
-    if (!confirmDelete) return;
+  const handleConfirmDelete = async () => {
+    if (!currentUser || !entryPendingDelete) return;
+
+    setIsDeletingEntry(true);
+    setDeleteError(null);
 
     try {
+      const entryId = entryPendingDelete.id;
       await deleteJournalEntry(currentUser.uid, entryId);
+      
       const remaining = entries.filter((ent) => ent.id !== entryId);
       setEntries(remaining);
+      
       if (activeEntry?.id === entryId) {
         if (remaining.length > 0) {
           setActiveEntry(remaining[0]);
@@ -140,9 +152,13 @@ export default function App() {
           createNewEntry(currentUser.uid);
         }
       }
+      
+      setEntryPendingDelete(null);
     } catch (err: any) {
-      console.error('Failed to delete entry:', err);
-      alert('Could not delete entry: ' + (err.message || 'Firestore error'));
+      console.error('Failed to delete entry from Firestore:', err);
+      setDeleteError(err.message || 'Failed to delete page. Please check your connection.');
+    } finally {
+      setIsDeletingEntry(false);
     }
   };
 
@@ -286,11 +302,13 @@ export default function App() {
 
   if (isAuthChecking) {
     return (
-      <div className="min-h-screen bg-[#0c0e14] text-[#f3f2ee] flex items-center justify-center p-4">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-6 h-6 animate-spin text-[#a78bfa]" />
-          <p className="text-xs font-medium text-[#8a8880] tracking-wide">
-            Verifying cryptographic session...
+      <div className="min-h-screen bg-[#0d1214] text-[#f7f5ed] flex items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-3 relative">
+          <div className="w-10 h-10 rounded-2xl bg-[#141d1f] border border-emerald-400/30 flex items-center justify-center text-emerald-300 shadow-sm">
+            <Loader2 className="w-5 h-5 animate-spin text-emerald-300" />
+          </div>
+          <p className="text-xs font-medium text-[#9aaba1] tracking-wide font-lora italic text-sm">
+            Preparing your quiet notebook...
           </p>
         </div>
       </div>
@@ -308,7 +326,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-[#0c0e14] text-[#f3f2ee] overflow-hidden">
+    <div className="flex flex-col h-screen bg-[#0d1214] text-[#f7f5ed] overflow-hidden">
       <AppHeader
         user={currentUser}
         onSignOut={handleSignOut}
@@ -324,7 +342,7 @@ export default function App() {
             activeEntryId={activeEntry?.id || null}
             onSelectEntry={handleSelectEntry}
             onNewEntry={() => createNewEntry()}
-            onDeleteEntry={handleDeleteEntry}
+            onDeleteEntry={handleRequestDeleteEntry}
             isLoading={isLoadingEntries}
           />
         </div>
@@ -333,16 +351,16 @@ export default function App() {
         {isMobileSidebarOpen && (
           <div className="md:hidden fixed inset-0 z-40 flex">
             <div
-              className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+              className="fixed inset-0 bg-black/70 backdrop-blur-xs transition-opacity"
               onClick={() => setIsMobileSidebarOpen(false)}
             />
-            <div className="relative z-50 w-4/5 max-w-xs h-full bg-[#0f121a] shadow-2xl">
+            <div className="relative z-50 w-4/5 max-w-xs h-full bg-[#0f1517] shadow-2xl">
               <JournalSidebar
                 entries={entries}
                 activeEntryId={activeEntry?.id || null}
                 onSelectEntry={handleSelectEntry}
                 onNewEntry={() => createNewEntry()}
-                onDeleteEntry={handleDeleteEntry}
+                onDeleteEntry={handleRequestDeleteEntry}
                 isLoading={isLoadingEntries}
                 onCloseMobile={() => setIsMobileSidebarOpen(false)}
               />
@@ -359,6 +377,7 @@ export default function App() {
             isSending={isSendingPrompt}
             isGeneratingReflection={isGeneratingReflection}
             onUpdateTitle={handleUpdateTitle}
+            onDeleteEntry={() => activeEntry && handleRequestDeleteEntry(activeEntry)}
             error={editorError}
             onRetry={
               failedPrompt
@@ -369,25 +388,40 @@ export default function App() {
             }
           />
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center bg-[#0c0e14] p-8 text-center space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-[#141722] border border-white/[0.08] flex items-center justify-center text-[#a78bfa]">
-              <Loader2 className="w-5 h-5 opacity-40" />
+          <div className="flex-1 flex flex-col items-center justify-center bg-[#0d1214] p-8 text-center space-y-4">
+            <div className="w-14 h-14 rounded-2xl bg-[#141d1f] border border-emerald-400/25 flex items-center justify-center text-emerald-300 shadow-sm">
+              <Loader2 className="w-6 h-6 opacity-60 text-emerald-300" />
             </div>
             <div>
-              <h3 className="text-sm font-medium text-[#dedcd5]">No Active Thought</h3>
-              <p className="text-xs text-[#8a8880] max-w-xs mx-auto mt-1">
-                Select an entry from your journal ledger or create a new one to begin.
+              <h3 className="text-base font-semibold text-[#f8f6f0] font-newsreader">No Active Page</h3>
+              <p className="text-xs text-[#9aaba1] font-lora italic text-sm max-w-xs mx-auto mt-1">
+                Select a page from your notebooks or write a new one to begin.
               </p>
             </div>
             <button
               onClick={() => createNewEntry()}
-              className="px-4 py-2 rounded-xl bg-[#8b7cf7] text-white hover:bg-[#7a6ae8] text-xs font-medium transition-all shadow-md cursor-pointer"
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:opacity-90 text-xs font-semibold font-newsreader tracking-wide transition-all shadow-sm cursor-pointer"
             >
-              + Create New Thought
+              + Write New Page
             </button>
           </div>
         )}
       </div>
+
+      {/* In-app non-blocking Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={Boolean(entryPendingDelete)}
+        entry={entryPendingDelete}
+        onClose={() => {
+          if (!isDeletingEntry) {
+            setEntryPendingDelete(null);
+            setDeleteError(null);
+          }
+        }}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isDeletingEntry}
+        error={deleteError}
+      />
     </div>
   );
 }
