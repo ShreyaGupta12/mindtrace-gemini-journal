@@ -5,6 +5,7 @@
 
 [![Cloud Run Challenge](https://img.shields.io/badge/Challenge-Cloud%20Run%20AI%20Challenge-blue)](https://cloud.google.com/run)
 `dev-tutorial=cloud-run-ai-challenge`
+Link to YT Video: https://youtu.be/6yt86HTEcPo?si=qdNFLdsygY-eHUIo 
 
 ---
 
